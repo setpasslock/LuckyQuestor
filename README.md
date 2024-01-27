@@ -1,6 +1,6 @@
 # LuckyQuestor
 
-LuckyQuestor is focused on monitoring CVEs published or modified CURRENT DAY. It provides an interactive interface in CLI and uses the cve.circl.lu API (API Key not required) for data sourcing. 
+LuckyQuestor is focused on monitoring CVEs published or modified on CURRENT DAY. It provides an interactive interface in CLI and uses the cve.circl.lu API (API Key not required) for data sourcing. 
 
 ## Installation
 uses "prompt_toolkit" to get input, "rich" for screen displays and "requests" for http requests. Dependencies can be downloaded from requirements.txt.
