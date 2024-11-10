@@ -16,8 +16,6 @@ import csv
 from dataclasses import dataclass
 import concurrent.futures
 import threading
-
-# Global caches
 cve_details_cache = {}
 mitre_cache_lock = threading.Lock()
 
@@ -73,8 +71,6 @@ class MitreIntegration:
     def _fetch_and_cache_mappings(self):
         """Fetch latest mappings from MITRE and cache them"""
         print("[yellow]Fetching MITRE data for first time setup...[/yellow]")
-        
-        # Simplified mapping for demo - in production, would fetch from MITRE APIs
         self.attack_patterns = {
             "T1190": MitreMapping(
                 attack_id="T1190",
@@ -91,8 +87,6 @@ class MitreIntegration:
                 url="https://attack.mitre.org/techniques/T1595/"
             )
         }
-        
-        # Basic CWE mappings
         self.cwe_mappings = {
             "CWE-79": CWEMapping(
                 cwe_id="CWE-79",
@@ -111,8 +105,6 @@ class MitreIntegration:
                 attack_patterns=["T1190"]
             )
         }
-        
-        # Cache the results
         with mitre_cache_lock:
             with open('cache/mitre_attack.json', 'w') as f:
                 json.dump({k: v.__dict__ for k, v in self.attack_patterns.items()}, f, indent=4)
@@ -207,11 +199,7 @@ class MitreIntegration:
                     mitigations.append("Monitor for unauthorized system modifications")
                 
         return mitigations
-
-# Initialize MITRE integration globally
 mitre = MitreIntegration()
-
-# Mevcut fonksiyonları güncelleyelim
 
 def display_cve_with_mitre(cve_details: dict) -> str:
     """Format CVE details with MITRE analysis for display"""
@@ -231,8 +219,6 @@ def display_cve_with_mitre(cve_details: dict) -> str:
         res_pr += f"Last Modified Date: [red]{last_mod_date}[/red]\n"
     except:
         pass
-
-    # Add MITRE Analysis section
     if mitre_analysis["cwe_info"]:
         res_pr += "\n[cyan]CWE Information:[/cyan]\n"
         res_pr += f"Name: {mitre_analysis['cwe_info']['name']}\n"
@@ -256,14 +242,11 @@ def display_cve_with_mitre(cve_details: dict) -> str:
     res_pr += f"\n[yellow]Summary:[/yellow]\n{cve_details.get('summary', 'No summary available.')}"
     
     return res_pr
-
-# Watchlist'i MITRE özellikleriyle genişletelim
 def load_watchlist():
     """Load watchlist from file with MITRE support"""
     try:
         with open('cve_watchlist.json', 'r') as f:
             data = json.load(f)
-            # Ensure backward compatibility and add new MITRE fields if not present
             if 'attack_techniques' not in data:
                 data['attack_techniques'] = []
             if 'tactics' not in data:
@@ -283,7 +266,6 @@ def load_watchlist():
 
 def check_watchlist_match(cve_details, watchlist):
     """Check if CVE matches watchlist criteria including MITRE data"""
-    # Existing checks
     for keyword in watchlist['keywords']:
         if keyword.lower() in cve_details.get('summary', '').lower():
             return True
@@ -294,24 +276,16 @@ def check_watchlist_match(cve_details, watchlist):
     for vendor in watchlist['vendors']:
         if vendor.lower() in cve_details.get('summary', '').lower():
             return True
-    
-    # New MITRE-based checks
     mitre_analysis = mitre.analyze_cve(cve_details)
-    
-    # Check ATT&CK techniques
     for pattern in mitre_analysis["attack_patterns"]:
         if pattern["id"] in watchlist['attack_techniques']:
             return True
         if pattern["tactic"].lower() in [t.lower() for t in watchlist['tactics']]:
             return True
-    
-    # Check risk threshold
     if mitre_analysis["risk_score"] >= watchlist['risk_threshold']:
         return True
             
     return False
-
-# Interactive prompt'a yeni MITRE komutlarını ekleyelim
 def handle_mitre_command(cmd_parts):
     """Handle MITRE-related commands"""
     if len(cmd_parts) < 2:
@@ -396,7 +370,6 @@ def interactive_prompt(today_date_param, cve_dict, table):
     
     while True:
         try:
-            # prompt yerine session.prompt kullan
             inp = session.prompt(f"|{today_date_param}|> ")
             cmd_parts = inp.split()
             
@@ -523,7 +496,6 @@ def interactive_prompt(today_date_param, cve_dict, table):
                     details = cve_details_cache.get(cve) or check_cve(cve)
                     if details:
                         print_colored_dict(details)
-                        # Add MITRE analysis
                         print("\n[cyan]MITRE Analysis:[/cyan]")
                         analysis = mitre.analyze_cve(details)
                         print_colored_dict(analysis)
@@ -560,7 +532,6 @@ def interactive_prompt(today_date_param, cve_dict, table):
                     print("[red]Error processing date command[/red]")
                     
             elif cmd == "analyze":
-                # Analyze komutu aynı kalıyor
                 print("[cyan]The following groups are grouped with the idea that CVE numbers shared on the same day, one after the other, may be related to each other.[/cyan]")
                 print("")
                 
@@ -606,8 +577,6 @@ def interactive_prompt(today_date_param, cve_dict, table):
             print("\n[yellow]Use 'exit' command to quit[/yellow]")
         except Exception as e:
             print(f"[red]Error: {str(e)}[/red]")
-
-# İlk gönderdiğim kod aynen kalacak şekilde, aşağıdaki fonksiyonları güncelleyip ekliyorum:
 
 def validate_date_format(user_input):
     try:
@@ -724,29 +693,19 @@ def filter_cves(cve_dict, criteria):
         details = cve_details_cache.get(cve_id)
         if not details:
             continue
-            
-        # CVSS score filtering
         if 'cvss' in criteria:
             min_cvss = float(criteria['cvss'])
             if not details.get('cvss') or float(details.get('cvss', 0) or 0) < min_cvss:
                 continue
-                
-        # Keyword filtering
         if 'keyword' in criteria:
             keyword = criteria['keyword'].lower()
             summary = details.get('summary', '').lower()
             if keyword not in summary:
                 continue
-                
-        # CWE filtering
         if 'cwe' in criteria:
             if details.get('cwe') != criteria['cwe']:
                 continue
-        
-        # MITRE-specific filtering
         mitre_analysis = mitre.analyze_cve(details)
-        
-        # Technique filtering
         if 'technique' in criteria:
             technique_found = False
             for pattern in mitre_analysis['attack_patterns']:
@@ -755,8 +714,6 @@ def filter_cves(cve_dict, criteria):
                     break
             if not technique_found:
                 continue
-        
-        # Tactic filtering
         if 'tactic' in criteria:
             tactic_found = False
             for pattern in mitre_analysis['attack_patterns']:
@@ -864,8 +821,6 @@ def main(limit, today_date=None):
             
             cvss_colored = get_cvss_color(cve.get('cvss'))
             cve_id = cve['id']
-            
-            # Cache initial CVE details and calculate risk score
             if cve_id not in cve_details_cache:
                 cve_details_cache[cve_id] = cve
             
