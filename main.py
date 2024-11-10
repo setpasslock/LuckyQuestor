@@ -784,88 +784,96 @@ def fetch_and_cache_cve_details(cve_dict):
     print("[green]CVE details cached successfully[/green]")
 
 def main(limit, today_date=None):
-    console = Console()
-    
-    try:
-        r_url1 = f"https://cve.circl.lu/api/last/{limit}"
-        resp = requests.get(r_url1)
-        resp.raise_for_status()
-        cve_list = resp.json()
-        
-        if cve_list and not today_date:
-            latest_cve = cve_list[0]
-            published_raw = datetime.strptime(latest_cve['Published'], '%Y-%m-%dT%H:%M:%S')
-            today_date = str(published_raw.date())
-            
-    except Exception as e:
-        console.print(f"[red]Error fetching CVEs: {str(e)}[/red]")
-        return
+   console = Console()
+   
+   try:
+       r_url1 = f"https://cve.circl.lu/api/last/{limit}"
+       resp = requests.get(r_url1)
+       resp.raise_for_status()
+       cve_list = resp.json()
+       
+       if cve_list and not today_date:
+           latest_cve = cve_list[0]
+           published_raw = datetime.strptime(latest_cve['Published'], '%Y-%m-%dT%H:%M:%S')
+           today_date = str(published_raw.date())
+           
+   except Exception as e:
+       console.print(f"[red]Error fetching CVEs: {str(e)}[/red]")
+       return
 
-    table = Table(title=f"CVE's for {today_date}")
-    table.add_column("ID", justify="center", style="red")
-    table.add_column("Published Today", justify="left", style="cyan", no_wrap=True)
-    table.add_column("Modified Today", justify="left", style="cyan", no_wrap=True)
-    table.add_column("Risk Score", style="magenta", no_wrap=True)
+   table = Table(title=f"CVE's for {today_date}")
+   table.add_column("ID", justify="center", style="red")
+   table.add_column("Published Today", justify="left", style="cyan", no_wrap=True)
+   table.add_column("Modified Today", justify="left", style="cyan", no_wrap=True)
+   table.add_column("Risk Score", style="magenta", no_wrap=True)
+   table.add_column("MITRE", style="green", no_wrap=True)
 
-    row_id = 1
-    cve_dict = {}
-    has_entries = False
+   row_id = 1
+   cve_dict = {}
+   has_entries = False
 
-    for cve in cve_list:
-        try:
-            published_raw = datetime.strptime(cve['Published'], '%Y-%m-%dT%H:%M:%S')
-            published_date = str(published_raw.date())
-            
-            modified_raw = datetime.strptime(cve['Modified'], '%Y-%m-%dT%H:%M:%S')
-            modified_date = str(modified_raw.date())
-            
-            cvss_colored = get_cvss_color(cve.get('cvss'))
-            cve_id = cve['id']
-            if cve_id not in cve_details_cache:
-                cve_details_cache[cve_id] = cve
-            
-            mitre_analysis = mitre.analyze_cve(cve)
-            risk_score = f"{mitre_analysis['risk_score']:.2f}"
-            
-            if published_date == today_date or modified_date == today_date:
-                has_entries = True
-                if published_date == today_date:
-                    table.add_row(
-                        str(row_id),
-                        f"{cve_id}[#33cc33]|[/#33cc33] CVSS:{cvss_colored}",
-                        "",
-                        risk_score
-                    )
-                else:
-                    table.add_row(
-                        str(row_id),
-                        "",
-                        f"{cve_id}[#33cc33]|[/#33cc33] CVSS:{cvss_colored}",
-                        risk_score
-                    )
-                cve_dict[str(row_id)] = cve_id
-                row_id += 1
-                
-        except Exception as e:
-            console.print(f"[red]Error processing CVE {cve.get('id', 'unknown')}: {str(e)}[/red]")
-            continue
+   for cve in cve_list:
+       try:
+           published_raw = datetime.strptime(cve['Published'], '%Y-%m-%dT%H:%M:%S')
+           published_date = str(published_raw.date())
+           
+           modified_raw = datetime.strptime(cve['Modified'], '%Y-%m-%dT%H:%M:%S')
+           modified_date = str(modified_raw.date())
+           
+           cvss_colored = get_cvss_color(cve.get('cvss'))
+           cve_id = cve['id']
+           
+           # Cache initial CVE details and calculate risk score
+           if cve_id not in cve_details_cache:
+               cve_details_cache[cve_id] = cve
+           
+           mitre_analysis = mitre.analyze_cve(cve)
+           risk_score = f"{mitre_analysis['risk_score']:.2f}"
+           
+           # MITRE bilgisi kontrolü
+           has_mitre = "✓" if mitre_analysis["attack_patterns"] or mitre_analysis["cwe_info"] else ""
+           
+           if published_date == today_date or modified_date == today_date:
+               has_entries = True
+               if published_date == today_date:
+                   table.add_row(
+                       str(row_id),
+                       f"{cve_id}[#33cc33]|[/#33cc33] CVSS:{cvss_colored}",
+                       "",
+                       risk_score,
+                       has_mitre
+                   )
+               else:
+                   table.add_row(
+                       str(row_id),
+                       "",
+                       f"{cve_id}[#33cc33]|[/#33cc33] CVSS:{cvss_colored}",
+                       risk_score,
+                       has_mitre
+                   )
+               cve_dict[str(row_id)] = cve_id
+               row_id += 1
+               
+       except Exception as e:
+           console.print(f"[red]Error processing CVE {cve.get('id', 'unknown')}: {str(e)}[/red]")
+           continue
 
-    if not has_entries:
-        console.print(f"[yellow]No CVEs found for {today_date}[/yellow]")
-        return
+   if not has_entries:
+       console.print(f"[yellow]No CVEs found for {today_date}[/yellow]")
+       return
 
-    console.print(table)
+   console.print(table)
 
-    while True:
-        try:
-            interactive_prompt(today_date, cve_dict, table)
-            break
-        except KeyboardInterrupt:
-            console.print("\n[yellow]Exiting...[/yellow]")
-            break
-        except Exception as e:
-            console.print(f"[red]Error in interactive prompt: {str(e)}[/red]")
-            break
+   while True:
+       try:
+           interactive_prompt(today_date, cve_dict, table)
+           break
+       except KeyboardInterrupt:
+           console.print("\n[yellow]Exiting...[/yellow]")
+           break
+       except Exception as e:
+           console.print(f"[red]Error in interactive prompt: {str(e)}[/red]")
+           break
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="CVE Monitor with MITRE Integration")
