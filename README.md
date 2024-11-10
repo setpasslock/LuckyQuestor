@@ -68,9 +68,3 @@ watch remove keyword rce # Remove from watchlist
 All these new features maintain compatibility with the original workflow while providing enhanced functionality and improved performance through the new caching system.
 ```
 
-Bu güncellenmiş README dosyası:
-1. Orijinal içeriği ve formatı korur
-2. Yeni özellikleri ayrı bir bölümde açıklar
-3. Her yeni özellik için pratik örnekler sunar
-4. Performans iyileştirmelerini vurgular
-5. Yeni komutların kullanımını gösterir
