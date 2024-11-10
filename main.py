@@ -10,6 +10,8 @@ from rich import print
 import json
 import os
 from typing import Dict, List, Optional
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import InMemoryHistory
 import csv
 from dataclasses import dataclass
 import concurrent.futures
@@ -353,16 +355,49 @@ def handle_mitre_command(cmd_parts):
     else:
         print("[yellow]Invalid MITRE command. Available commands: analyze, techniques, stats[/yellow]")
 
+def handle_export(cve_dict, format_type):
+    """Handle export command"""
+    if not cve_dict:
+        print("[red]No CVEs to export[/red]")
+        return
+        
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"cve_report_{timestamp}.{format_type}"
+    
+    cve_data = []
+    for cve_id in cve_dict.values():
+        details = cve_details_cache.get(cve_id)
+        if details:
+            cve_data.append(details)
+    
+    if format_type == "json":
+        export_to_json(cve_data, filename)
+    elif format_type == "md":
+        export_to_markdown(cve_data, filename)
+    
+    print(f"[green]Successfully exported to {filename}[/green]")
+
+def save_watchlist(watchlist):
+    """Save watchlist to file"""
+    try:
+        with open('cve_watchlist.json', 'w') as f:
+            json.dump(watchlist, f, indent=4)
+    except Exception as e:
+        print(f"[red]Error saving watchlist: {str(e)}[/red]")
+
 def interactive_prompt(today_date_param, cve_dict, table):
     console = Console()
     watchlist = load_watchlist()
     
-    # Fetch and cache all CVE details at startup
+    session = PromptSession(
+        history=InMemoryHistory(),
+    )
     fetch_and_cache_cve_details(cve_dict)
     
     while True:
         try:
-            inp = prompt(f"|{today_date_param}|> ")
+            # prompt yerine session.prompt kullan
+            inp = session.prompt(f"|{today_date_param}|> ")
             cmd_parts = inp.split()
             
             if not cmd_parts:
