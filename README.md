@@ -66,5 +66,4 @@ watch remove keyword rce # Remove from watchlist
 ```
 
 All these new features maintain compatibility with the original workflow while providing enhanced functionality and improved performance through the new caching system.
-```
 
