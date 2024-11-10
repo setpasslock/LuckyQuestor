@@ -27,43 +27,36 @@ LuckyQuestor takes the current day's date as a reference and compares against it
 
 ## New Features
 
-### Performance Improvements
-LuckyQuestor now includes an intelligent caching system that significantly improves performance:
-- CVE details are cached after initial retrieval
-- Filtering and sorting operations now use cached data instead of making new API requests
-- Reduced API calls result in faster response times and less network usage
-
-### Enhanced Filtering
-The filter command now operates instantly using cached data:
-```bash
-filter cvss 7.5    # Show CVEs with CVSS >= 7.5
-filter keyword rce # Search for keyword 'rce' in summaries
-filter cwe CWE-79 # Filter by CWE ID
-```
-
-### Improved Sorting
-Sort operations are now near-instantaneous:
-```bash
-sort cvss  # Sort by CVSS score
-sort date  # Sort by publication date
-```
-
 ### Export Functionality
-Export your CVE data in different formats:
-```bash
-export json  # Export to JSON file
-export md    # Export to Markdown format
-```
+LuckyQuestor now supports exporting your CVE data in different formats:
+- `export json`: Export CVEs to JSON format
+- `export md`: Export CVEs to Markdown format
+
+### Enhanced Filtering and Sorting
+Powerful filtering options have been added:
+- `filter cvss 7.0`: Show CVEs with CVSS score higher than 7.0
+- `filter keyword sql`: Show CVEs containing "sql" in their description
+- `filter cwe CWE-79`: Show CVEs with specific CWE ID
+- `sort cvss`: Sort CVEs by CVSS score
+- `sort date`: Sort CVEs by publication date
 
 ### Watchlist Management
-Monitor specific types of vulnerabilities:
-```bash
-watch add keyword rce     # Add keyword to watchlist
-watch add cwe CWE-79     # Add CWE to watchlist
-watch add vendor apache  # Add vendor to watchlist
-watch list              # Show current watchlist
-watch remove keyword rce # Remove from watchlist
-```
+Keep track of specific vulnerabilities:
+- `watch add keyword sql`: Monitor SQL-related CVEs
+- `watch add vendor microsoft`: Monitor Microsoft-related CVEs
+- `watch add cwe CWE-79`: Monitor specific CWE types
 
-All these new features maintain compatibility with the original workflow while providing enhanced functionality and improved performance through the new caching system.
+### MITRE Integration
+New MITRE framework integration provides deeper vulnerability analysis:
+- Risk score calculation based on CVSS and MITRE data
+- MITRE ATT&CK pattern mapping
+- Mitigation recommendations
+- Enhanced CWE information
+- Extended filtering with MITRE techniques and tactics
+- Comprehensive MITRE analysis in exports
+
+Use `mitre` command to access MITRE-specific features:
+- `mitre analyze CVE-ID`: Detailed MITRE analysis for specific CVE
+- `mitre techniques`: List available ATT&CK techniques
+- `mitre stats`: View MITRE-related statistics
 
