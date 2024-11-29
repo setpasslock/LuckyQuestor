@@ -792,10 +792,8 @@ def main(limit, today_date=None):
        resp.raise_for_status()
        cve_list = resp.json()
        
-       if cve_list and not today_date:
-           latest_cve = cve_list[0]
-           published_raw = datetime.strptime(latest_cve['Published'], '%Y-%m-%dT%H:%M:%S')
-           today_date = str(published_raw.date())
+       if not today_date:
+           today_date = datetime.now().strftime('%Y-%m-%d')
            
    except Exception as e:
        console.print(f"[red]Error fetching CVEs: {str(e)}[/red]")
