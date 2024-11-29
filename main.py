@@ -518,18 +518,22 @@ def interactive_prompt(today_date_param, cve_dict, table):
                 except:
                     print("[red]Invalid limit value[/red]")
                     
-            elif cmd.startswith("date "):
+            elif cmd_parts[0] == "date":
                 try:
+                    if len(cmd_parts) != 2:
+                        print("[red]Usage: date YYYY-MM-DD[/red]")
+                        continue
+                        
                     date_a = cmd_parts[1]
                     isValid, date = validate_date_format(date_a)
                     
                     if isValid:
                         cve_details_cache.clear()
-                        main(limit=0, today_date=date)
+                        main(limit=100, today_date=date)
                     else:
                         print("[red]Not valid date format. Please use YYYY-MM-DD[/red]")
-                except:
-                    print("[red]Error processing date command[/red]")
+                except Exception as e:
+                    print(f"[red]Error processing date command: {str(e)}[/red]")
                     
             elif cmd == "analyze":
                 print("[cyan]The following groups are grouped with the idea that CVE numbers shared on the same day, one after the other, may be related to each other.[/cyan]")
